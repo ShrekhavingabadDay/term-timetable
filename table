@@ -1,0 +1,125 @@
+days=("Monday" "Tuesday" "Wednesday" "Thursday" "Friday")
+
+today=$( date '+%u' )
+
+current=${today}
+
+t=()
+
+mon=()
+tue=()
+wed=()
+thu=()
+fri=()
+
+path_to_file="./"
+
+quit=0
+
+# read in lessons data
+while IFS= read -r line; do
+    IFS=' ' read -ra lessons <<< "$line"
+
+    mon+=("${lessons[0]}")
+    tue+=("${lessons[1]}")
+    wed+=("${lessons[2]}")    
+    thu+=("${lessons[3]}")
+    fri+=("${lessons[4]}")
+
+done < $path_to_file"timetable"
+
+# read in timedata
+while IFS= read -r line; do
+    t+=("${line}")
+done < $path_to_file"timestamps"
+
+# all days are the same length
+len=${#mon[*]}
+
+print_today () {
+    clear
+    found=0
+
+    now=$(date --date="$(date +"%H:%M")" '+%s')
+
+    case "${today}" in
+        1) chosen=( "${mon[@]}" );;
+        2) chosen=( "${tue[@]}" );;
+        3) chosen=( "${wed[@]}" );;
+        4) chosen=( "${thu[@]}" );;
+        5) chosen=( "${fri[@]}" );;
+    esac
+
+    echo "${days[$(("${today}"-1))]}"
+
+    for (( n=0; n < ${len}; n++ )); do
+        if [ "$( date --date="${t[n]}" '+%s')" -gt "${now}" ] && [ ${found} -lt 1 ]; then
+            printf "${t[n]}\t$((n+1)))\t\033[40m${chosen[n]}\033[0m\n"
+            found=$((found + 1))
+        else
+            echo -e "${t[n]}\t$((n+1)))\t${chosen[n]}"
+        fi
+    done
+}
+
+print_day () {
+    clear
+
+    case "${current}" in
+        1) chosen=( "${mon[@]}" );;
+        2) chosen=( "${tue[@]}" );;
+        3) chosen=( "${wed[@]}" );;
+        4) chosen=( "${thu[@]}" );;
+        5) chosen=( "${fri[@]}" );;
+    esac
+
+    echo "${days[$(("${current}"-1))]}"
+
+    for (( n=0; n < ${len}; n++ )); do
+        echo -e "${t[n]}\t$((n+1)))\t${chosen[n]}"
+    done
+}
+
+left () {
+    if [ ${current} -gt 1 ]; then
+        current=$((current-1))
+    fi
+    
+    if [ ${current} -eq ${today} ]; then
+        print_today
+    else
+        print_day
+    fi
+} 
+
+right () {
+    if [ ${current} -lt 5 ]; then
+        current=$((current+1))
+    fi
+
+    if [ ${current} -eq ${today} ]; then
+        print_today
+    else
+        print_day
+    fi
+
+}
+
+show_today () {
+    current=${today}
+    print_today
+}
+
+print_today
+
+while [ ${quit} -lt 1 ]; do
+    read -sn 1 key
+
+    case "$key" in
+      'h') left;;
+      'l') right;;
+      'n') show_today;;
+      'q') quit=1;;  
+    esac
+
+done
